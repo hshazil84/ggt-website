@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Gulhaaru Shipper Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet"/>
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0D1F3C;--navy-mid:#1B3A6B;--navy-light:#2A5298;--navy-pale:#EBF0FA;
+  --black:#080C12;--white:#fff;--off:#F7F8FC;
+  --g100:#F0F2F8;--g200:#E4E8F0;--g300:#C8CDD8;--g400:#9BA3B8;--g500:#7A8099;--g700:#3D4255;
+  --gold:#C49A3C;--goldl:#E8C96A;
+  --success:#0F9B6B;--successbg:#DCFCE7;
+  --warning:#D97706;--warnbg:#FEF3C7;
+  --danger:#DC2626;--dangerbg:#FEE2E2;
+  --info:#2A5298;--infobg:#EBF0FA;
+  --sidebar:220px;
+  --fd:"Playfair Display",serif;--fb:"Inter",sans-serif;
+  --r:6px;--rl:12px;--tr:0.22s cubic-bezier(.4,0,.2,1)
+}
+html,body{height:100%;font-family:var(--fb);background:var(--off);color:var(--g700);line-height:1.5;overflow-x:hidden}
+h1,h2,h3{font-family:var(--fd)}
+button{font-family:var(--fb)}
+input,select,textarea{font-family:var(--fb)}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--g300);border-radius:2px}
+
+/* SCREENS */
+.screen{display:none;height:100vh}.screen.on{display:flex}
+
+/* LOGIN */
+#s-login{flex-direction:row}
+.login-left{width:55%;position:relative;overflow:hidden;background:linear-gradient(135deg,var(--black) 0%,var(--navy) 60%,var(--navy-mid) 100%);display:flex;flex-direction:column;justify-content:space-between;padding:48px}
+.login-left::before{content:"";position:absolute;right:-80px;top:-80px;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(196,154,60,0.12) 0%,transparent 70%)}
+.login-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px);background-size:60px 60px}
+.login-brand{position:relative;z-index:1}
+.login-brand img{height:44px;width:auto;filter:brightness(0) invert(1)}
+.login-brand .tagline{font-size:12px;color:rgba(255,255,255,0.4);margin-top:8px;letter-spacing:0.06em;text-transform:uppercase}
+.login-hero{position:relative;z-index:1}
+.login-hero h1{font-size:42px;font-weight:800;color:var(--white);line-height:1.12;margin-bottom:16px}
+.login-hero h1 em{font-style:italic;color:var(--goldl)}
+.login-hero p{font-size:15px;color:rgba(255,255,255,0.5);max-width:360px;line-height:1.72}
+.login-features{position:relative;z-index:1;display:flex;flex-direction:column;gap:14px}
+.lf-item{display:flex;align-items:center;gap:12px;font-size:13px;color:rgba(255,255,255,0.65)}
+.lf-icon{width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.login-right{flex:1;display:flex;align-items:center;justify-content:center;background:var(--white);padding:48px}
+.login-box{width:100%;max-width:380px}
+.login-box h2{font-size:26px;font-weight:700;color:var(--navy);margin-bottom:6px}
+.login-box .sub{font-size:14px;color:var(--g500);margin-bottom:36px}
+.fg{margin-bottom:16px}
+.fg label{display:block;font-size:11px;font-weight:700;color:var(--g700);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:7px}
+.fg input{width:100%;padding:11px 14px;border:1.5px solid var(--g300);border-radius:var(--r);font-size:14px;color:var(--navy);background:var(--white);outline:none;transition:border-color var(--tr)}
+.fg input:focus{border-color:var(--navy-mid);box-shadow:0 0 0 3px rgba(27,58,107,0.08)}
+.login-submit{width:100%;padding:13px;background:var(--navy);color:var(--white);font-size:13px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;border:none;cursor:pointer;border-radius:var(--r);transition:all var(--tr);margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px}
+.login-submit:hover{background:var(--navy-mid)}
+.login-submit:disabled{opacity:0.6;cursor:not-allowed}
+.login-error{background:var(--dangerbg);border:1px solid rgba(220,38,38,0.2);color:var(--danger);padding:10px 14px;border-radius:var(--r);font-size:13px;margin-bottom:16px;display:none}
+.login-footer{font-size:12px;color:var(--g400);text-align:center;margin-top:24px}
+
+/* SPINNER */
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* APP SHELL */
+#s-app{flex-direction:row}
+.sidebar{width:var(--sidebar);flex-shrink:0;background:var(--navy);display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,0.07);overflow:hidden}
+.sb-top{padding:18px 16px;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0}
+.sb-logo img{height:32px;width:auto;filter:brightness(0) invert(1);display:block}
+.sb-user{display:flex;align-items:center;gap:10px;padding:14px 16px;margin-top:8px;background:rgba(255,255,255,0.05);border-radius:var(--r)}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:var(--navy-mid);border:2px solid rgba(196,154,60,0.4);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--goldl);flex-shrink:0}
+.sb-uname{font-size:12px;font-weight:600;color:var(--white);line-height:1.3}
+.sb-urole{font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:0.04em;text-transform:capitalize}
+.sb-nav{flex:1;padding:12px 10px;overflow-y:auto}
+.sb-section{font-size:9px;font-weight:700;color:rgba(255,255,255,0.28);letter-spacing:0.14em;text-transform:uppercase;padding:8px 8px 6px;margin-top:8px}
+.sb-link{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--r);color:rgba(255,255,255,0.58);font-size:13px;font-weight:500;cursor:pointer;transition:all var(--tr);margin-bottom:2px;border:1px solid transparent}
+.sb-link:hover{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.85)}
+.sb-link.act{background:rgba(255,255,255,0.1);color:var(--white);border-color:rgba(255,255,255,0.08)}
+.sb-link .ico{width:18px;text-align:center;font-size:15px;flex-shrink:0}
+.sb-link .badge{margin-left:auto;background:var(--gold);color:var(--black);font-size:9px;font-weight:800;padding:2px 6px;border-radius:10px}
+.sb-bottom{padding:12px 10px;border-top:1px solid rgba(255,255,255,0.08);flex-shrink:0}
+.sb-logout{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--r);color:rgba(255,255,255,0.45);font-size:13px;cursor:pointer;transition:all var(--tr)}
+.sb-logout:hover{color:rgba(255,255,255,0.8);background:rgba(255,255,255,0.05)}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:60px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:var(--white);border-bottom:1px solid var(--g200)}
+.topbar-left h2{font-size:16px;font-weight:700;color:var(--navy);font-family:var(--fd)}
+.topbar-left p{font-size:11px;color:var(--g500)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.tb-icon{position:relative;width:36px;height:36px;border-radius:var(--r);background:var(--g100);border:1px solid var(--g200);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+.tb-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--danger);border:2px solid var(--white)}
+.content{flex:1;overflow-y:auto;padding:24px 28px}
+
+/* PANELS */
+.panel{display:none}.panel.on{display:block}
+
+/* LOADING STATE */
+.loading{text-align:center;padding:60px 20px;color:var(--g500)}
+.loading .spinner-lg{width:32px;height:32px;border:3px solid var(--g200);border-top-color:var(--navy);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 16px}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--white);border:1px solid var(--g200);border-radius:var(--rl);padding:20px 22px}
+.stat-card .slabel{font-size:11px;font-weight:600;color:var(--g500);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px}
+.stat-card .value{font-size:28px;font-weight:800;color:var(--navy);font-family:var(--fd);line-height:1}
+.stat-card .ssub{font-size:11px;color:var(--g500);margin-top:4px}
+
+/* ALERTS */
+.alert{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:var(--rl);margin-bottom:16px;font-size:13px}
+.alert-warn{background:var(--warnbg);border:1px solid rgba(217,119,6,0.2);color:#92400E}
+.alert-success{background:var(--successbg);border:1px solid rgba(15,155,107,0.2);color:#065F46}
+.alert-info{background:var(--infobg);border:1px solid rgba(42,82,152,0.2);color:var(--navy-mid)}
+.alert-close{margin-left:auto;cursor:pointer;opacity:0.5;font-size:18px;flex-shrink:0}
+
+/* TABLE */
+.table-card{background:var(--white);border:1px solid var(--g200);border-radius:var(--rl);overflow:hidden;margin-bottom:20px}
+.table-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--g200)}
+.table-head h3{font-size:14px;font-weight:700;color:var(--navy);font-family:var(--fd)}
+.table-actions{display:flex;gap:8px}
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--g100)}
+th{padding:10px 16px;text-align:left;font-size:10px;font-weight:700;color:var(--g500);letter-spacing:0.08em;text-transform:uppercase;border-bottom:1px solid var(--g200);white-space:nowrap}
+td{padding:12px 16px;font-size:13px;border-bottom:1px solid var(--g100);color:var(--g700)}
+tr:last-child td{border-bottom:none}
+tbody tr{transition:background var(--tr);cursor:pointer}
+tbody tr:hover{background:var(--g100)}
+.td-bold{font-weight:700;color:var(--navy)}
+.td-muted{color:var(--g400);font-size:12px}
+
+/* BADGES */
+.bdg{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:0.04em;white-space:nowrap}
+.bdg::before{content:"";width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.bdg-transit{background:#E0F2FE;color:#0369A1}.bdg-transit::before{background:#0369A1}
+.bdg-customs{background:var(--warnbg);color:#92400E}.bdg-customs::before{background:var(--warning)}
+.bdg-delivered{background:var(--successbg);color:#065F46}.bdg-delivered::before{background:var(--success)}
+.bdg-booking{background:var(--infobg);color:var(--navy-mid)}.bdg-booking::before{background:var(--navy-light)}
+.bdg-warehouse{background:#F3EFFE;color:#6D28D9}.bdg-warehouse::before{background:#7C3AED}
+.bdg-documents{background:#FEE2E2;color:#991B1B}.bdg-documents::before{background:#DC2626}
+.bdg-paid{background:var(--successbg);color:#065F46}.bdg-paid::before{background:var(--success)}
+.bdg-pending{background:var(--warnbg);color:#92400E}.bdg-pending::before{background:var(--warning)}
+.bdg-draft{background:var(--g100);color:var(--g500)}.bdg-draft::before{background:var(--g400)}
+
+/* BUTTONS */
+.btn{padding:8px 18px;border-radius:var(--r);font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all var(--tr);display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--navy);color:var(--white)}.btn-primary:hover{background:var(--navy-mid)}
+.btn-gold{background:var(--gold);color:var(--black)}.btn-gold:hover{background:var(--goldl)}
+.btn-outline{background:var(--white);color:var(--navy);border:1.5px solid var(--g300)}.btn-outline:hover{border-color:var(--navy)}
+.btn-ghost{background:transparent;color:var(--navy-light);padding:8px 0}.btn-ghost:hover{color:var(--navy)}
+.btn-success{background:var(--success);color:var(--white)}
+.btn-sm{padding:6px 12px;font-size:11px}
+.wa-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;background:#25D366;color:var(--white);border:none;border-radius:var(--r);font-size:12px;font-weight:700;cursor:pointer;transition:all var(--tr)}
+.wa-btn:hover{background:#1DA851}
+
+/* GRID */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.card{background:var(--white);border:1px solid var(--g200);border-radius:var(--rl);padding:22px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:14px;font-weight:700;color:var(--navy);font-family:var(--fd)}
+
+/* NOTIF */
+.notif-item{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--g100)}
+.notif-item:last-child{border-bottom:none}
+.notif-ico{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.notif-title{font-size:13px;font-weight:600;color:var(--navy)}
+.notif-sub{font-size:11px;color:var(--g500);margin-top:2px}
+.notif-time{font-size:10px;color:var(--g400);margin-top:4px}
+
+/* TRACKING */
+.track-bar{display:flex;align-items:center;margin:24px 0}
+.track-step{flex:1;text-align:center;position:relative}
+.track-step::before{content:"";position:absolute;top:14px;left:-50%;right:50%;height:2px;background:var(--g200);z-index:0}
+.track-step:first-child::before{display:none}
+.track-step.done::before{background:var(--navy)}
+.track-dot{width:28px;height:28px;border-radius:50%;background:var(--white);border:2px solid var(--g300);display:flex;align-items:center;justify-content:center;margin:0 auto 6px;position:relative;z-index:1;font-size:11px;font-weight:700}
+.track-step.done .track-dot{background:var(--navy);border-color:var(--navy);color:var(--white)}
+.track-step.active .track-dot{background:var(--gold);border-color:var(--gold);color:var(--black);box-shadow:0 0 0 4px rgba(196,154,60,0.2)}
+.track-label{font-size:10px;color:var(--g500);font-weight:500}
+.track-step.done .track-label,.track-step.active .track-label{color:var(--navy);font-weight:600}
+
+/* UPLOAD */
+.upload-zone{border:2px dashed var(--g300);border-radius:var(--rl);padding:36px;text-align:center;cursor:pointer;transition:all var(--tr);background:var(--g100)}
+.upload-zone:hover{border-color:var(--navy-light);background:var(--navy-pale)}
+.upload-zone .u-icon{font-size:32px;margin-bottom:10px}
+.upload-zone h4{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:4px}
+.upload-zone p{font-size:12px;color:var(--g500)}
+
+/* PILL TABS */
+.pill-tabs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
+.pill{padding:6px 16px;border-radius:20px;font-size:11px;font-weight:600;border:1.5px solid var(--g200);background:var(--white);color:var(--g500);cursor:pointer;transition:all var(--tr)}
+.pill.act{background:var(--navy);color:var(--white);border-color:var(--navy)}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(8,12,18,0.6);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-bg.on{display:flex}
+.modal{background:var(--white);border-radius:var(--rl);padding:32px;width:100%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,0.2)}
+.modal h3{font-size:20px;font-weight:700;color:var(--navy);margin-bottom:6px;font-family:var(--fd)}
+.modal .msub{font-size:13px;color:var(--g500);margin-bottom:24px}
+.modal-actions{display:flex;gap:10px;margin-top:24px;justify-content:flex-end}
+.fg-modal{margin-bottom:14px}
+.fg-modal label{display:block;font-size:11px;font-weight:700;color:var(--g700);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:7px}
+.fg-modal input,.fg-modal select,.fg-modal textarea{width:100%;padding:10px 14px;border:1.5px solid var(--g300);border-radius:var(--r);font-size:13px;color:var(--navy);outline:none;transition:border-color var(--tr);font-family:var(--fb)}
+.fg-modal input:focus,.fg-modal select:focus,.fg-modal textarea:focus{border-color:var(--navy-mid)}
+.fg-modal textarea{min-height:80px;resize:vertical}
+
+/* ROLE BADGE */
+.role-pill{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase}
+.role-super{background:rgba(196,154,60,0.15);color:var(--gold)}
+.role-admin{background:var(--infobg);color:var(--navy-mid)}
+.role-client{background:var(--successbg);color:#065F46}
+
+/* INFO ROWS */
+.info-row{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--g100)}
+.info-row:last-child{border-bottom:none}
+.info-row .k{font-size:11px;font-weight:600;color:var(--g500);letter-spacing:0.05em;text-transform:uppercase}
+.info-row .v{font-size:13px;font-weight:600;color:var(--navy);text-align:right}
+
+/* EMPTY */
+.empty{text-align:center;padding:60px 20px;color:var(--g500)}
+.empty .e-icon{font-size:40px;margin-bottom:12px}
+.empty h4{font-size:15px;font-weight:600;color:var(--g700);margin-bottom:6px}
+
+@media(max-width:900px){
+  .login-left{display:none}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .grid2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="screen on" id="s-login">
+  <div class="login-left">
+    <div class="login-grid"></div>
+    <div class="login-brand">
+      <img src="/assets/images/logo.png" alt="GGT"/>
+      <div class="tagline">Shipper Portal · Secure Access</div>
+    </div>
+    <div class="login-hero">
+      <h1>Trade at Your<br/><em>Fingertips.</em></h1>
+      <p>Your all-in-one gateway to manage shipments, upload documents, track cargo, and settle payments.</p>
+    </div>
+    <div class="login-features">
+      <div class="lf-item"><div class="lf-icon">📍</div>Real-time shipment tracking — 24/7</div>
+      <div class="lf-item"><div class="lf-icon">📤</div>One-click document submission</div>
+      <div class="lf-item"><div class="lf-icon">💬</div>Automated WhatsApp milestone alerts</div>
+      <div class="lf-item"><div class="lf-icon">💳</div>Secure digital invoice payments</div>
+    </div>
+  </div>
+  <div class="login-right">
+    <div class="login-box">
+      <h2>Welcome back</h2>
+      <p class="sub">Sign in to your Gulhaaru Shipper Portal</p>
+      <div class="login-error" id="login-error">Invalid email or password. Please try again.</div>
+      <div class="fg"><label>Email Address</label><input type="email" id="login-email" placeholder="you@company.com" autocomplete="email"/></div>
+      <div class="fg"><label>Password</label><input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"/></div>
+      <button class="login-submit" id="login-btn" onclick="doLogin()">Sign In →</button>
+      <p class="login-footer">Gulhaaru General Trading FZE · Sharjah, UAE<br/>Need access? Contact +971 58 594 7764</p>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="screen" id="s-app">
+  <div class="sidebar">
+    <div class="sb-top">
+      <div class="sb-logo"><img src="/assets/images/logo.png" alt="GGT"/></div>
+      <div class="sb-user">
+        <div class="sb-avatar" id="sb-avatar">--</div>
+        <div>
+          <div class="sb-uname" id="sb-name">Loading...</div>
+          <div class="sb-urole" id="sb-role">--</div>
+        </div>
+      </div>
+    </div>
+    <div class="sb-nav" id="sb-nav">
+      <!-- Built dynamically based on role -->
+    </div>
+    <div class="sb-bottom">
+      <div class="sb-logout" onclick="doLogout()"><span class="ico">⟵</span> Sign Out</div>
+    </div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h2 id="topbar-title">Dashboard</h2>
+        <p id="topbar-sub">Gulhaaru General Trading FZE</p>
+      </div>
+      <div class="topbar-right">
+        <div id="wa-quick" style="display:none">
+          <button class="wa-btn" onclick="openModal('modal-wa')">💬 WhatsApp</button>
+        </div>
+        <div class="tb-icon">🔔<div class="tb-dot" id="notif-dot" style="display:none"></div></div>
+      </div>
+    </div>
+    <div class="content" id="main-content">
+      <div class="loading"><div class="spinner-lg"></div><p>Loading your dashboard...</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-bg" id="modal-wa">
+  <div class="modal">
+    <h3>Send WhatsApp</h3>
+    <p class="msub">Message sent via GGT WhatsApp Business</p>
+    <div class="fg-modal"><label>Client</label>
+      <select id="wa-client"></select>
+    </div>
+    <div class="fg-modal"><label>Template</label>
+      <select onchange="setWATemplate(this.value)">
+        <option value="hbl">House BL Ready</option>
+        <option value="pay">Payment Request</option>
+        <option value="depart">Vessel Departed</option>
+        <option value="customs">Customs Cleared</option>
+        <option value="delivered">Delivered</option>
+      </select>
+    </div>
+    <div class="fg-modal"><label>Message</label><textarea id="wa-msg">Hello! Your House Bill of Lading is ready. Please download from your portal. — Gulhaaru General Trading FZE</textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-wa')">Cancel</button>
+      <button class="wa-btn" onclick="sendWA()">💬 Send Now</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-status">
+  <div class="modal">
+    <h3>Update Shipment Status</h3>
+    <p class="msub">Client will be notified automatically.</p>
+    <div class="fg-modal"><label>New Status</label>
+      <select id="new-status">
+        <option value="booking">Booking Confirmed</option>
+        <option value="warehouse">In Warehouse</option>
+        <option value="documents">Documentation</option>
+        <option value="customs">Customs Clearance</option>
+        <option value="dispatched">Dispatched to Port</option>
+        <option value="transit">In Transit</option>
+        <option value="arrived">Arrived</option>
+        <option value="delivered">Delivered</option>
+      </select>
+    </div>
+    <div class="fg-modal"><label>Notes</label><textarea id="status-notes" placeholder="Optional notes..."></textarea></div>
+    <div style="padding:12px;background:var(--infobg);border-radius:var(--r);font-size:12px;color:var(--navy-mid);margin-top:8px">💬 WhatsApp notification will be sent to the client automatically.</div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-status')">Cancel</button>
+      <button class="btn btn-primary" onclick="updateStatus()">Update & Notify →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── SUPABASE INIT ──
+const { createClient } = supabase;
+const sb = createClient('https://lhygypjkwgkutllaoldc.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxoeWd5cGprd2drdXRsbGFvbGRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNzgyNjYsImV4cCI6MjA5MzY1NDI2Nn0.82znYxj9T-ix_DYzWlU8FOodRNjuYiV_W8Jr-SkXDAw');
+
+// ── STATE ──
+let currentUser = null;
+let currentRole = null;
+let currentUserRecord = null;
+let selectedJobId = null;
+let allShipments = [];
+let allClients = [];
+
+// ── STATUS CONFIG ──
+const STATUS_STEPS = ['booking','warehouse','documents','customs','dispatched','transit','arrived','delivered'];
+const STATUS_LABELS = {
+  booking:'Booking', warehouse:'Warehouse', documents:'Docs',
+  customs:'Customs', dispatched:'Departed', transit:'In Transit',
+  arrived:'Arrived', delivered:'Delivered'
+};
+const STATUS_BADGE = {
+  booking:'bdg-booking', warehouse:'bdg-warehouse', documents:'bdg-documents',
+  customs:'bdg-customs', dispatched:'bdg-transit', transit:'bdg-transit',
+  arrived:'bdg-delivered', delivered:'bdg-delivered'
+};
+
+// ── NAV CONFIG BY ROLE ──
+const NAV = {
+  super_admin: [
+    { section:'Main' },
+    { id:'dashboard', label:'Dashboard', ico:'⊞' },
+    { id:'shipments', label:'All Shipments', ico:'⬡' },
+    { section:'Operations' },
+    { id:'warehouse', label:'Warehouse', ico:'⬢' },
+    { id:'documents', label:'Documents', ico:'📋' },
+    { section:'Clients' },
+    { id:'clients', label:'Clients', ico:'👤' },
+    { id:'notifications', label:'Notifications', ico:'💬' },
+    { section:'Finance' },
+    { id:'finance', label:'Finance', ico:'💳' },
+    { section:'System' },
+    { id:'users', label:'Users & Roles', ico:'◍' },
+    { id:'settings', label:'Settings', ico:'⚙️' },
+  ],
+  admin: [
+    { section:'Main' },
+    { id:'dashboard', label:'Dashboard', ico:'⊞' },
+    { id:'shipments', label:'All Shipments', ico:'⬡' },
+    { section:'Operations' },
+    { id:'warehouse', label:'Warehouse', ico:'⬢' },
+    { id:'documents', label:'Documents', ico:'📋' },
+    { section:'Clients' },
+    { id:'clients', label:'Clients', ico:'👤' },
+    { id:'notifications', label:'Notifications', ico:'💬' },
+    { section:'Finance' },
+    { id:'finance', label:'Finance', ico:'💳' },
+  ],
+  client: [
+    { section:'Main' },
+    { id:'dashboard', label:'Dashboard', ico:'⊞' },
+    { id:'shipments', label:'My Shipments', ico:'⬡' },
+    { id:'track', label:'Track Cargo', ico:'📍' },
+    { section:'Documents' },
+    { id:'upload', label:'Upload Documents', ico:'📤' },
+    { id:'archive', label:'Document Archive', ico:'🗂' },
+    { section:'Finance' },
+    { id:'invoices', label:'Invoices', ico:'💳' },
+    { section:'Support' },
+    { id:'notifications_client', label:'Notifications', ico:'🔔' },
+  ]
+};
+
+// ── LOGIN ──
+document.getElementById('login-password').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-error');
+
+  if (!email || !password) { showError('Please enter your email and password.'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Signing in...';
+  err.style.display = 'none';
+
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+
+    currentUser = data.user;
+    await loadUserRole();
+    await initApp();
+  } catch(e) {
+    showError(e.message || 'Invalid email or password.');
+    btn.disabled = false;
+    btn.innerHTML = 'Sign In →';
+  }
+}
+
+function showError(msg) {
+  const err = document.getElementById('login-error');
+  err.textContent = msg;
+  err.style.display = 'block';
+}
+
+async function loadUserRole() {
+  const { data, error } = await sb
+    .from('user_roles')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .single();
+
+  if (error || !data) throw new Error('User role not found. Please contact GGT support.');
+  currentUserRecord = data;
+  currentRole = data.role;
+}
+
+// ── INIT APP ──
+async function initApp() {
+  document.getElementById('s-login').classList.remove('on');
+  document.getElementById('s-app').classList.add('on');
+
+  // Set user info in sidebar
+  const name = currentUserRecord.name || currentUser.email;
+  const initials = name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('sb-avatar').textContent = initials;
+  document.getElementById('sb-name').textContent = name;
+  document.getElementById('sb-role').textContent = currentRole.replace('_',' ');
+
+  // Show WhatsApp button for staff
+  if (currentRole !== 'client') {
+    document.getElementById('wa-quick').style.display = 'block';
+  }
+
+  // Build nav
+  buildNav();
+
+  // Load data
+  await loadData();
+
+  // Show dashboard
+  showPanel('dashboard');
+}
+
+function buildNav() {
+  const nav = NAV[currentRole] || NAV.client;
+  const container = document.getElementById('sb-nav');
+  container.innerHTML = '';
+  nav.forEach(item => {
+    if (item.section) {
+      container.innerHTML += `<div class="sb-section">${item.section}</div>`;
+    } else {
+      container.innerHTML += `<div class="sb-link" id="nav-${item.id}" onclick="showPanel('${item.id}', this)"><span class="ico">${item.ico}</span>${item.label}</div>`;
+    }
+  });
+}
+
+// ── LOAD DATA ──
+async function loadData() {
+  try {
+    // Load shipments
+    let shipQuery = sb.from('shipments').select(`*, clients(company_name, email, phone)`).order('created_at', { ascending: false });
+    if (currentRole === 'client') {
+      const clientId = await getClientId();
+      if (clientId) shipQuery = shipQuery.eq('client_id', clientId);
+    }
+    const { data: ships } = await shipQuery;
+    allShipments = ships || [];
+
+    // Load clients (staff only)
+    if (currentRole !== 'client') {
+      const { data: clients } = await sb.from('clients').select('*').order('company_name');
+      allClients = clients || [];
+      // Populate WA client select
+      const sel = document.getElementById('wa-client');
+      allClients.forEach(c => { sel.innerHTML += `<option value="${c.id}">${c.company_name}</option>`; });
+    }
+  } catch(e) {
+    console.error('Data load error:', e);
+  }
+}
+
+async function getClientId() {
+  const { data } = await sb.from('clients')
+    .select('id')
+    .eq('company_name', currentUserRecord.company_name)
+    .single();
+  return data?.id;
+}
+
+// ── SHOW PANEL ──
+function showPanel(id, linkEl) {
+  // Update nav active state
+  document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('act'));
+  const navLink = linkEl || document.getElementById('nav-' + id);
+  if (navLink) navLink.classList.add('act');
+
+  // Render panel
+  const content = document.getElementById('main-content');
+  const titles = {
+    dashboard: ['Dashboard', currentRole === 'client' ? 'Welcome back, ' + (currentUserRecord.name || '') : 'Gulhaaru General Trading FZE · Sharjah'],
+    shipments: ['Shipments', currentRole === 'client' ? 'Your active and past consignments' : 'All active consignments'],
+    track: ['Track Cargo', 'Real-time shipment visibility'],
+    upload: ['Upload Documents', 'Submit Commercial Invoice, Packing List and more'],
+    archive: ['Document Archive', 'Download your shipping documents'],
+    invoices: ['Invoices', 'Outstanding and paid invoices'],
+    notifications_client: ['Notifications', 'Your alerts and updates'],
+    warehouse: ['Warehouse', 'Sharjah Industrial 13 — live stock register'],
+    documents: ['Documents', 'Pending verifications and uploads'],
+    clients: ['Clients', 'Manage GGT client accounts'],
+    notifications: ['Notifications', 'Send WhatsApp and email alerts'],
+    finance: ['Finance', 'Invoices, payments and reconciliation'],
+    users: ['Users & Roles', 'Team access and permissions'],
+    settings: ['Settings', 'System configuration'],
+  };
+
+  if (titles[id]) {
+    document.getElementById('topbar-title').textContent = titles[id][0];
+    document.getElementById('topbar-sub').textContent = titles[id][1];
+  }
+
+  switch(id) {
+    case 'dashboard': renderDashboard(content); break;
+    case 'shipments': renderShipments(content); break;
+    case 'track': renderTrack(content); break;
+    case 'upload': renderUpload(content); break;
+    case 'archive': renderArchive(content); break;
+    case 'invoices': renderInvoices(content); break;
+    case 'notifications_client': renderClientNotifications(content); break;
+    case 'warehouse': renderWarehouse(content); break;
+    case 'documents': renderDocuments(content); break;
+    case 'clients': renderClients(content); break;
+    case 'notifications': renderNotifications(content); break;
+    case 'finance': renderFinance(content); break;
+    case 'users': renderUsers(content); break;
+    case 'settings': renderSettings(content); break;
+    default: content.innerHTML = '<div class="empty"><div class="e-icon">🚧</div><h4>Coming Soon</h4><p>This module is under development.</p></div>';
+  }
+}
+
+// ── BADGE HELPER ──
+function badge(status) {
+  const cls = STATUS_BADGE[status] || 'bdg-booking';
+  const label = status.charAt(0).toUpperCase() + status.slice(1).replace('_',' ');
+  return `<span class="bdg ${cls}">${label}</span>`;
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+// ── DASHBOARD ──
+function renderDashboard(el) {
+  const active = allShipments.filter(s => !['delivered'].includes(s.status)).length;
+  const transit = allShipments.filter(s => s.status === 'transit').length;
+  const delivered = allShipments.filter(s => s.status === 'delivered').length;
+  const customs = allShipments.filter(s => s.status === 'customs').length;
+
+  const isStaff = currentRole !== 'client';
+
+  el.innerHTML = `
+    <div class="stats-row">
+      <div class="stat-card"><div class="slabel">Active Shipments</div><div class="value">${active}</div><div class="ssub">${transit} in transit</div></div>
+      <div class="stat-card"><div class="slabel">Customs</div><div class="value" style="color:var(--warning)">${customs}</div><div class="ssub">Awaiting clearance</div></div>
+      <div class="stat-card"><div class="slabel">Delivered</div><div class="value" style="color:var(--success)">${delivered}</div><div class="ssub">Completed</div></div>
+      <div class="stat-card"><div class="slabel">Total Jobs</div><div class="value">${allShipments.length}</div><div class="ssub">All time</div></div>
+    </div>
+    <div class="grid2">
+      <div class="table-card">
+        <div class="table-head"><h3>Recent Shipments</h3><button class="btn btn-ghost btn-sm" onclick="showPanel('shipments')">View all →</button></div>
+        <table>
+          <thead><tr><th>Job ID</th><th>Type</th>${isStaff ? '<th>Client</th>' : ''}<th>Status</th><th>ETA</th></tr></thead>
+          <tbody>
+            ${allShipments.slice(0,5).map(s => `
+              <tr onclick="showPanel('shipments')">
+                <td class="td-bold">${s.job_ref}</td>
+                <td>${s.type}</td>
+                ${isStaff ? `<td class="td-muted">${s.clients?.company_name || '—'}</td>` : ''}
+                <td>${badge(s.status)}</td>
+                <td class="td-muted">${fmtDate(s.eta)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Quick Actions</span></div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          ${isStaff ? `
+            <button class="btn btn-primary" style="width:100%;padding:11px;justify-content:center" onclick="openModal('modal-wa')">💬 Send WhatsApp Notification</button>
+            <button class="btn btn-outline" style="width:100%;padding:11px;justify-content:center" onclick="showPanel('documents')">📋 Upload House BL</button>
+            <button class="btn btn-outline" style="width:100%;padding:11px;justify-content:center" onclick="showPanel('finance')">💳 Generate Invoice</button>
+            <button class="btn btn-outline" style="width:100%;padding:11px;justify-content:center" onclick="showPanel('shipments')">⬡ View All Jobs</button>
+          ` : `
+            <button class="btn btn-primary" style="width:100%;padding:11px;justify-content:center" onclick="showPanel('track')">📍 Track My Cargo</button>
+            <button class="btn btn-outline" style="width:100%;padding:11px;justify-content:center" onclick="showPanel('upload')">📤 Upload Documents</button>
+            <button class="btn btn-outline" style="width:100%;padding:11px;justify-content:center" onclick="showPanel('invoices')">💳 View Invoices</button>
+            <button class="btn btn-outline" style="width:100%;padding:11px;justify-content:center" onclick="showPanel('archive')">🗂 Document Archive</button>
+          `}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── SHIPMENTS ──
+function renderShipments(el) {
+  const isStaff = currentRole !== 'client';
+  el.innerHTML = `
+    <div class="table-card">
+      <div class="table-head">
+        <h3>${isStaff ? 'All Shipments' : 'My Shipments'}</h3>
+        <div class="table-actions">
+          <button class="btn btn-outline btn-sm" onclick="loadData().then(()=>showPanel('shipments'))">↻ Refresh</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Job Ref</th>
+          ${isStaff ? '<th>Client</th>' : ''}
+          <th>Type</th>
+          <th>Origin</th>
+          <th>Destination</th>
+          <th>Weight</th>
+          <th>ETA</th>
+          <th>Status</th>
+          ${isStaff ? '<th>Actions</th>' : ''}
+        </tr></thead>
+        <tbody>
+          ${allShipments.length === 0
+            ? `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--g500)">No shipments found</td></tr>`
+            : allShipments.map(s => `
+            <tr>
+              <td class="td-bold">${s.job_ref}</td>
+              ${isStaff ? `<td>${s.clients?.company_name || '—'}</td>` : ''}
+              <td>${s.type}</td>
+              <td class="td-muted">${s.origin || '—'}</td>
+              <td class="td-muted">${s.destination || '—'}</td>
+              <td class="td-muted">${s.weight_kg ? s.weight_kg.toLocaleString() + ' kg' : '—'}</td>
+              <td class="td-muted">${fmtDate(s.eta)}</td>
+              <td>${badge(s.status)}</td>
+              ${isStaff ? `<td><div style="display:flex;gap:6px">
+                <button class="btn btn-outline btn-sm" onclick="openStatusModal('${s.id}', event)">Update</button>
+                <button class="wa-btn" style="padding:5px 10px;font-size:10px" onclick="openModal('modal-wa')">💬</button>
+              </div></td>` : ''}
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ── TRACK ──
+function renderTrack(el) {
+  el.innerHTML = `
+    <div class="card" style="max-width:680px">
+      <div class="card-head"><span class="card-title">Track Your Cargo</span></div>
+      <div style="display:flex;gap:10px;margin-bottom:20px">
+        <input id="track-input" style="flex:1;padding:11px 14px;border:1.5px solid var(--g300);border-radius:var(--r);font-size:14px;color:var(--navy);outline:none" placeholder="Enter job reference e.g. GGT-2024-0041"/>
+        <button class="btn btn-primary" onclick="doTrack()">Track →</button>
+      </div>
+      <div id="track-result"></div>
+    </div>`;
+  // Auto-fill first shipment
+  if (allShipments.length > 0) {
+    document.getElementById('track-input').value = allShipments[0].job_ref;
+    doTrack();
+  }
+}
+
+function doTrack() {
+  const ref = document.getElementById('track-input').value.trim();
+  const s = allShipments.find(x => x.job_ref.toLowerCase() === ref.toLowerCase());
+  const el = document.getElementById('track-result');
+  if (!s) { el.innerHTML = `<div class="alert alert-warn"><span>⚠️</span> Shipment not found. Please check the reference number.</div>`; return; }
+
+  const stepIdx = STATUS_STEPS.indexOf(s.status);
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding:16px;background:var(--g100);border-radius:var(--r)">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--navy)">${s.job_ref}</div>
+        <div style="font-size:12px;color:var(--g500)">${s.clients?.company_name || ''} · ${s.type} · ${s.origin || ''} → ${s.destination || ''}</div>
+      </div>
+      ${badge(s.status)}
+    </div>
+    <div class="track-bar">
+      ${STATUS_STEPS.map((step, i) => {
+        const cls = i < stepIdx ? 'done' : i === stepIdx ? 'active' : '';
+        return `<div class="track-step ${cls}">
+          <div class="track-dot">${i < stepIdx ? '✓' : i === stepIdx ? '→' : ''}</div>
+          <div class="track-label">${STATUS_LABELS[step]}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px">
+      <div>
+        <div class="info-row"><span class="k">Type</span><span class="v">${s.type}</span></div>
+        <div class="info-row"><span class="k">Origin</span><span class="v">${s.origin || '—'}</span></div>
+        <div class="info-row"><span class="k">Destination</span><span class="v">${s.destination || '—'}</span></div>
+      </div>
+      <div>
+        <div class="info-row"><span class="k">Weight</span><span class="v">${s.weight_kg ? s.weight_kg.toLocaleString() + ' kg' : '—'}</span></div>
+        <div class="info-row"><span class="k">ETA</span><span class="v" style="color:var(--success)">${fmtDate(s.eta)}</span></div>
+        <div class="info-row"><span class="k">Vessel/Ref</span><span class="v">${s.vessel || s.container_ref || '—'}</span></div>
+      </div>
+    </div>`;
+}
+
+// ── UPLOAD ──
+function renderUpload(el) {
+  el.innerHTML = `
+    <div class="grid2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Submit Documents</span></div>
+        <p style="font-size:13px;color:var(--g500);margin-bottom:20px">Upload your documents to initiate or update a booking. Our operations team is notified immediately.</p>
+        <div class="fg-modal" style="margin-bottom:16px"><label>Linked Shipment</label>
+          <select>${allShipments.map(s=>`<option value="${s.id}">${s.job_ref} — ${s.type}</option>`).join('')}<option>New Booking</option></select>
+        </div>
+        <div style="margin-bottom:14px">
+          <div style="font-size:11px;font-weight:700;color:var(--g700);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:8px">Commercial Invoice</div>
+          <div class="upload-zone" onclick="simulateUpload(this)"><div class="u-icon">📄</div><h4>Drop file or click to browse</h4><p>PDF, JPG, PNG — max 10MB</p></div>
+        </div>
+        <div style="margin-bottom:14px">
+          <div style="font-size:11px;font-weight:700;color:var(--g700);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:8px">Packing List</div>
+          <div class="upload-zone" onclick="simulateUpload(this)"><div class="u-icon">📋</div><h4>Drop file or click to browse</h4><p>PDF, Excel — max 10MB</p></div>
+        </div>
+        <button class="btn btn-primary" style="width:100%;padding:12px;margin-top:4px;justify-content:center">Submit Documents →</button>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Guidelines</span></div>
+        <div style="font-size:13px;color:var(--g500);line-height:1.8">
+          <p style="margin-bottom:12px">✓ Ensure all weights on CI match the Packing List exactly.</p>
+          <p style="margin-bottom:12px">✓ Include HS codes on your Commercial Invoice for UAE customs.</p>
+          <p style="margin-bottom:12px">✓ Pharmaceutical shipments — include health certificates and MOH approvals.</p>
+          <p style="margin-bottom:12px">✓ After upload you will receive an email confirmation and WhatsApp alert when verified.</p>
+          <p>For support contact: <strong style="color:var(--navy)">+971 58 594 7764</strong></p>
+        </div>
+      </div>
+    </div>`;
+}
+
+function simulateUpload(zone) {
+  zone.style.borderColor = 'var(--success)';
+  zone.style.background = 'var(--successbg)';
+  zone.innerHTML = '<div class="u-icon">✅</div><h4 style="color:var(--success)">Uploaded successfully</h4><p>Team notified</p>';
+}
+
+// ── ARCHIVE ──
+function renderArchive(el) {
+  el.innerHTML = `
+    <div class="table-card">
+      <div class="table-head"><h3>Document Archive</h3></div>
+      <div class="empty"><div class="e-icon">🗂</div><h4>Documents will appear here</h4><p>Once your documents are processed by our team they will be available to download.</p></div>
+    </div>`;
+}
+
+// ── INVOICES (CLIENT) ──
+async function renderInvoices(el) {
+  el.innerHTML = `<div class="loading"><div class="spinner-lg"></div><p>Loading invoices...</p></div>`;
+  try {
+    let q = sb.from('invoices').select('*, shipments(job_ref), clients(company_name)').order('created_at', { ascending: false });
+    if (currentRole === 'client') {
+      const cid = await getClientId();
+      if (cid) q = q.eq('client_id', cid);
+    }
+    const { data: invoices } = await q;
+    el.innerHTML = `
+      <div class="table-card">
+        <div class="table-head"><h3>Invoices</h3></div>
+        <table>
+          <thead><tr><th>Invoice</th><th>Shipment</th><th>Description</th><th>Amount (AED)</th><th>Due</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            ${(invoices||[]).length === 0
+              ? `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--g500)">No invoices found</td></tr>`
+              : (invoices||[]).map(inv => `
+              <tr>
+                <td class="td-bold">${inv.invoice_ref}</td>
+                <td class="td-muted">${inv.shipments?.job_ref || '—'}</td>
+                <td>${inv.description || '—'}</td>
+                <td class="td-bold" style="color:${inv.status==='pending'?'var(--danger)':inv.status==='paid'?'var(--success)':'var(--navy)'}">${Number(inv.amount_aed).toLocaleString()}</td>
+                <td class="td-muted">${fmtDate(inv.due_date)}</td>
+                <td>${badge('bdg-'+inv.status) ? `<span class="bdg bdg-${inv.status}">${inv.status}</span>` : inv.status}</td>
+                <td>${inv.status==='pending' ? `<button class="btn btn-gold btn-sm">Pay Now</button>` : `<button class="btn btn-outline btn-sm">Receipt</button>`}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="alert alert-warn">Failed to load invoices: ${e.message}</div>`;
+  }
+}
+
+// ── CLIENT NOTIFICATIONS ──
+async function renderClientNotifications(el) {
+  el.innerHTML = `<div class="loading"><div class="spinner-lg"></div></div>`;
+  try {
+    const cid = await getClientId();
+    const { data: notifs } = await sb.from('notifications').select('*').eq('client_id', cid).order('created_at', { ascending: false });
+    el.innerHTML = `
+      <div class="card" style="max-width:640px">
+        <div class="card-head"><span class="card-title">All Notifications</span></div>
+        ${(notifs||[]).length === 0
+          ? '<div class="empty"><div class="e-icon">🔔</div><h4>No notifications yet</h4></div>'
+          : (notifs||[]).map(n => `
+          <div class="notif-item">
+            <div class="notif-ico" style="background:var(--infobg)">${n.channel==='whatsapp'?'💬':'📧'}</div>
+            <div>
+              <div class="notif-title">${n.message}</div>
+              <div class="notif-time">${fmtDate(n.created_at)} · ${n.channel}</div>
+            </div>
+          </div>`).join('')}
+      </div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="alert alert-warn">Failed to load notifications.</div>`;
+  }
+}
+
+// ── WAREHOUSE (STAFF) ──
+function renderWarehouse(el) {
+  el.innerHTML = `
+    <div class="stats-row" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat-card"><div class="slabel">In Warehouse</div><div class="value">${allShipments.filter(s=>s.status==='warehouse').length}</div><div class="ssub">Active consignments</div></div>
+      <div class="stat-card"><div class="slabel">Pending Dispatch</div><div class="value" style="color:var(--warning)">${allShipments.filter(s=>s.status==='documents').length}</div><div class="ssub">Awaiting port</div></div>
+      <div class="stat-card"><div class="slabel">In Transit</div><div class="value" style="color:var(--success)">${allShipments.filter(s=>s.status==='transit').length}</div><div class="ssub">On the way</div></div>
+    </div>
+    <div class="table-card">
+      <div class="table-head"><h3>Warehouse Register</h3><button class="btn btn-primary btn-sm">+ Receive Goods</button></div>
+      <table>
+        <thead><tr><th>Job Ref</th><th>Client</th><th>Type</th><th>Weight</th><th>ETA</th><th>Status</th></tr></thead>
+        <tbody>
+          ${allShipments.filter(s=>['warehouse','documents','booking'].includes(s.status)).map(s=>`
+          <tr>
+            <td class="td-bold">${s.job_ref}</td>
+            <td>${s.clients?.company_name||'—'}</td>
+            <td>${s.type}</td>
+            <td class="td-muted">${s.weight_kg?s.weight_kg.toLocaleString()+' kg':'—'}</td>
+            <td class="td-muted">${fmtDate(s.eta)}</td>
+            <td>${badge(s.status)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ── DOCUMENTS (STAFF) ──
+function renderDocuments(el) {
+  el.innerHTML = `
+    <div class="table-card">
+      <div class="table-head"><h3>Document Actions</h3><button class="btn btn-primary btn-sm">Upload House BL</button></div>
+      <div class="empty"><div class="e-icon">📋</div><h4>Document management</h4><p>Connect Supabase Storage to enable full document upload and management.</p></div>
+    </div>`;
+}
+
+// ── CLIENTS (STAFF) ──
+function renderClients(el) {
+  el.innerHTML = `
+    <div class="table-card">
+      <div class="table-head"><h3>Client Accounts</h3><button class="btn btn-primary btn-sm">+ Add Client</button></div>
+      <table>
+        <thead><tr><th>Company</th><th>Contact</th><th>Email</th><th>Phone</th><th>Active Jobs</th><th>Status</th></tr></thead>
+        <tbody>
+          ${allClients.map(c => {
+            const jobs = allShipments.filter(s=>s.client_id===c.id && s.status!=='delivered').length;
+            return `<tr>
+              <td class="td-bold">${c.company_name}</td>
+              <td>${c.contact_name||'—'}</td>
+              <td class="td-muted">${c.email||'—'}</td>
+              <td class="td-muted">${c.phone||'—'}</td>
+              <td><strong>${jobs}</strong></td>
+              <td><span style="color:var(--success);font-weight:700;font-size:11px">● Active</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ── NOTIFICATIONS (STAFF) ──
+async function renderNotifications(el) {
+  el.innerHTML = `
+    <div class="grid2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Send WhatsApp</span></div>
+        <div class="fg-modal"><label>Client</label><select id="notif-client">${allClients.map(c=>`<option value="${c.id}">${c.company_name}</option>`).join('')}</select></div>
+        <div class="fg-modal"><label>Template</label>
+          <select onchange="setWATemplate(this.value)">
+            <option value="hbl">House BL Ready</option>
+            <option value="pay">Payment Request</option>
+            <option value="depart">Vessel Departed</option>
+            <option value="customs">Customs Cleared</option>
+            <option value="delivered">Delivered</option>
+          </select>
+        </div>
+        <div class="fg-modal"><label>Message</label><textarea id="wa-msg-panel" style="min-height:80px">Hello! Your House Bill of Lading is ready to download from your portal. — Gulhaaru General Trading FZE</textarea></div>
+        <div style="display:flex;gap:10px;margin-top:8px">
+          <button class="wa-btn" style="flex:1;justify-content:center;padding:12px" onclick="sendWA()">💬 Send WhatsApp</button>
+          <button class="btn btn-outline" style="padding:12px 16px">📧 Email</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Recent Notifications</span></div>
+        <div class="loading"><div class="spinner-lg"></div></div>
+      </div>
+    </div>`;
+
+  // Load recent notifications
+  const { data: notifs } = await sb.from('notifications').select('*, clients(company_name)').order('created_at', { ascending: false }).limit(10);
+  const notifCard = el.querySelectorAll('.card')[1];
+  notifCard.innerHTML = `
+    <div class="card-head"><span class="card-title">Recent Notifications</span></div>
+    ${(notifs||[]).map(n=>`
+    <div class="notif-item">
+      <div class="notif-ico" style="background:var(--infobg)">${n.channel==='whatsapp'?'💬':'📧'}</div>
+      <div>
+        <div class="notif-title">${n.clients?.company_name||'Unknown'}</div>
+        <div class="notif-sub">${n.message.substring(0,60)}...</div>
+        <div class="notif-time">${fmtDate(n.created_at)} · ${n.channel} · ${n.status}</div>
+      </div>
+    </div>`).join('')}`;
+}
+
+// ── FINANCE (STAFF) ──
+async function renderFinance(el) {
+  el.innerHTML = `<div class="loading"><div class="spinner-lg"></div></div>`;
+  const { data: invoices } = await sb.from('invoices').select('*, shipments(job_ref), clients(company_name)').order('created_at', { ascending: false });
+  const total = (invoices||[]).reduce((a,i)=>a+Number(i.amount_aed),0);
+  const paid = (invoices||[]).filter(i=>i.status==='paid').reduce((a,i)=>a+Number(i.amount_aed),0);
+  const outstanding = (invoices||[]).filter(i=>i.status==='pending').reduce((a,i)=>a+Number(i.amount_aed),0);
+
+  el.innerHTML = `
+    <div class="stats-row" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat-card"><div class="slabel">Total Invoiced</div><div class="value">AED ${total.toLocaleString()}</div></div>
+      <div class="stat-card"><div class="slabel">Collected</div><div class="value" style="color:var(--success)">AED ${paid.toLocaleString()}</div></div>
+      <div class="stat-card"><div class="slabel">Outstanding</div><div class="value" style="color:var(--danger)">AED ${outstanding.toLocaleString()}</div></div>
+    </div>
+    <div class="table-card">
+      <div class="table-head"><h3>All Invoices</h3><button class="btn btn-primary btn-sm">+ New Invoice</button></div>
+      <table>
+        <thead><tr><th>Invoice</th><th>Client</th><th>Shipment</th><th>Amount (AED)</th><th>Due</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          ${(invoices||[]).map(inv=>`
+          <tr>
+            <td class="td-bold">${inv.invoice_ref}</td>
+            <td>${inv.clients?.company_name||'—'}</td>
+            <td class="td-muted">${inv.shipments?.job_ref||'—'}</td>
+            <td class="td-bold" style="color:${inv.status==='pending'?'var(--danger)':inv.status==='paid'?'var(--success)':'var(--navy)'}">${Number(inv.amount_aed).toLocaleString()}</td>
+            <td class="td-muted">${fmtDate(inv.due_date)}</td>
+            <td><span class="bdg bdg-${inv.status}">${inv.status}</span></td>
+            <td><div style="display:flex;gap:6px">
+              ${inv.status==='pending'?`<button class="btn btn-success btn-sm" onclick="markPaid('${inv.id}', this)">Mark Paid</button>`:''}
+              <button class="btn btn-outline btn-sm">View</button>
+            </div></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+async function markPaid(id, btn) {
+  btn.disabled = true; btn.textContent = '...';
+  await sb.from('invoices').update({ status:'paid', paid_at: new Date().toISOString() }).eq('id', id);
+  showPanel('finance');
+}
+
+// ── USERS (SUPER ADMIN ONLY) ──
+async function renderUsers(el) {
+  if (currentRole !== 'super_admin') { el.innerHTML = `<div class="empty"><div class="e-icon">🔒</div><h4>Access Restricted</h4><p>Only Super Admins can manage users.</p></div>`; return; }
+  el.innerHTML = `<div class="loading"><div class="spinner-lg"></div></div>`;
+  const { data: users } = await sb.from('user_roles').select('*, auth_user:user_id(email)').order('created_at');
+  // Note: direct auth.users join needs service role — show what we have
+  const { data: authUsers } = await sb.from('user_roles').select('*').order('created_at');
+
+  el.innerHTML = `
+    <div class="table-card">
+      <div class="table-head"><h3>Users & Roles</h3><button class="btn btn-primary btn-sm">+ Add User</button></div>
+      <table>
+        <thead><tr><th>Name</th><th>Role</th><th>Company</th><th>Phone</th><th>Status</th></tr></thead>
+        <tbody>
+          ${(authUsers||[]).map(u=>`
+          <tr>
+            <td class="td-bold">${u.name||'—'}</td>
+            <td><span class="role-pill role-${u.role}">${u.role.replace('_',' ')}</span></td>
+            <td class="td-muted">${u.company_name||'GGT Staff'}</td>
+            <td class="td-muted">${u.phone||'—'}</td>
+            <td><span style="color:var(--success);font-weight:700;font-size:11px">${u.is_active?'● Active':'○ Inactive'}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="card" style="margin-top:0">
+      <div class="card-head"><span class="card-title">Role Permission Matrix</span></div>
+      <table style="font-size:12px">
+        <thead><tr><th>Module</th><th>Super Admin</th><th>Admin</th><th>Client</th></tr></thead>
+        <tbody>
+          ${[
+            ['All Shipments','✓','✓','Own only'],
+            ['Warehouse','✓','✓','—'],
+            ['Documents','✓','✓','Upload only'],
+            ['Clients','✓','✓','—'],
+            ['Finance','✓','✓','Own invoices'],
+            ['WhatsApp','✓','✓','—'],
+            ['Users & Roles','✓','—','—'],
+            ['Settings','✓','—','—'],
+          ].map(([m,sa,a,c])=>`
+          <tr>
+            <td style="font-weight:500">${m}</td>
+            <td style="text-align:center;color:var(--success)">${sa}</td>
+            <td style="text-align:center;color:${a==='—'?'var(--g300)':'var(--success)'}">${a}</td>
+            <td style="text-align:center;color:${c==='—'?'var(--g300)':'var(--navy-mid)'}">${c}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ── SETTINGS (SUPER ADMIN ONLY) ──
+function renderSettings(el) {
+  if (currentRole !== 'super_admin') { el.innerHTML = `<div class="empty"><div class="e-icon">🔒</div><h4>Access Restricted</h4></div>`; return; }
+  el.innerHTML = `
+    <div class="grid2">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Supabase Connection</span></div>
+        <div class="info-row"><span class="k">Project</span><span class="v">lhygypjkwgkutllaoldc</span></div>
+        <div class="info-row"><span class="k">Region</span><span class="v">Southeast Asia</span></div>
+        <div class="info-row"><span class="k">Status</span><span class="v" style="color:var(--success)">● Connected</span></div>
+        <div class="info-row"><span class="k">Auth</span><span class="v" style="color:var(--success)">● Active</span></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">WhatsApp (Twilio)</span></div>
+        <div class="info-row"><span class="k">Status</span><span class="v" style="color:var(--warning)">⚠ Not connected</span></div>
+        <div class="info-row"><span class="k">Account SID</span><span class="v">—</span></div>
+        <p style="font-size:12px;color:var(--g500);margin-top:12px">Connect Twilio to enable real WhatsApp notifications to clients.</p>
+        <button class="btn btn-primary btn-sm" style="margin-top:12px">Configure Twilio →</button>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Company Details</span></div>
+        <div class="info-row"><span class="k">Company</span><span class="v">Gulhaaru General Trading FZE</span></div>
+        <div class="info-row"><span class="k">Address</span><span class="v">Sharjah Industrial 13</span></div>
+        <div class="info-row"><span class="k">Cargo Line</span><span class="v">+971 58 594 7764</span></div>
+        <div class="info-row"><span class="k">GM</span><span class="v">+971 58 153 7497</span></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Storage (Documents)</span></div>
+        <div class="info-row"><span class="k">Status</span><span class="v" style="color:var(--warning)">⚠ Not configured</span></div>
+        <div class="info-row"><span class="k">Provider</span><span class="v">Supabase Storage</span></div>
+        <p style="font-size:12px;color:var(--g500);margin-top:12px">Enable Supabase Storage to allow document uploads and downloads.</p>
+        <button class="btn btn-primary btn-sm" style="margin-top:12px">Configure Storage →</button>
+      </div>
+    </div>`;
+}
+
+// ── STATUS UPDATE ──
+function openStatusModal(shipmentId, e) {
+  if(e) e.stopPropagation();
+  selectedJobId = shipmentId;
+  openModal('modal-status');
+}
+
+async function updateStatus() {
+  if (!selectedJobId) return;
+  const newStatus = document.getElementById('new-status').value;
+  const notes = document.getElementById('status-notes').value;
+  await sb.from('shipments').update({ status: newStatus, notes }).eq('id', selectedJobId);
+  await loadData();
+  closeModal('modal-status');
+  showPanel('shipments');
+}
+
+// ── WHATSAPP ──
+const WA_TEMPLATES = {
+  hbl: 'Hello! Your House Bill of Lading is ready to download from your portal. — Gulhaaru General Trading FZE',
+  pay: 'Dear Client, please settle your outstanding invoice to release your shipping documents. — Gulhaaru General Trading FZE',
+  depart: 'Your shipment has departed the origin port. We will keep you updated on the ETA. — Gulhaaru General Trading FZE',
+  customs: 'Good news! Customs clearance is complete. Your cargo is now available for delivery. — Gulhaaru General Trading FZE',
+  delivered: 'Your shipment has been successfully delivered. Proof of delivery is in your document archive. — Gulhaaru General Trading FZE',
+};
+
+function setWATemplate(v) {
+  const msg = document.getElementById('wa-msg') || document.getElementById('wa-msg-panel');
+  if (msg && WA_TEMPLATES[v]) msg.value = WA_TEMPLATES[v];
+}
+
+async function sendWA() {
+  // Log notification to Supabase
+  const clientEl = document.getElementById('wa-client') || document.getElementById('notif-client');
+  const msgEl = document.getElementById('wa-msg') || document.getElementById('wa-msg-panel');
+  if (clientEl && msgEl) {
+    await sb.from('notifications').insert({
+      client_id: clientEl.value,
+      channel: 'whatsapp',
+      message: msgEl.value,
+      status: 'sent',
+      triggered_by: currentUserRecord.name || 'staff'
+    });
+  }
+  closeModal('modal-wa');
+  alert('WhatsApp notification logged. Connect Twilio to send real messages.');
+}
+
+// ── MODAL ──
+function openModal(id) { document.getElementById(id).classList.add('on'); }
+function closeModal(id) { document.getElementById(id).classList.remove('on'); }
+document.querySelectorAll('.modal-bg').forEach(bg => {
+  bg.addEventListener('click', function(e){ if(e.target===this) this.classList.remove('on'); });
+});
+
+// ── LOGOUT ──
+async function doLogout() {
+  await sb.auth.signOut();
+  currentUser = null; currentRole = null; currentUserRecord = null;
+  allShipments = []; allClients = [];
+  document.getElementById('s-app').classList.remove('on');
+  document.getElementById('s-login').classList.add('on');
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
+}
+
+// ── AUTH STATE LISTENER ──
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'SIGNED_IN' && session && !currentUser) {
+    currentUser = session.user;
+    try {
+      await loadUserRole();
+      await initApp();
+    } catch(e) {
+      console.error(e);
+    }
+  }
+});
+</script>
+</body>
+</html>
